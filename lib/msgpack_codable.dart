@@ -4,21 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:macros/macros.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
-final _corePackage = Uri.parse('dart:core');
-final _typedDataPackage = Uri.parse('dart:typed_data');
-final _msgpackCodablePackage = Uri.parse('package:msgpack_codable/msgpack_codable.dart');
-final _msgpackDartPackage = Uri.parse('package:msgpack_dart/msgpack_dart.dart');
-
-typedef _Reporter = void Function(String message);
-
-enum _TypeKind {
-  base,
-  complex,
-  array,
-  map,
-  unsupported,
-}
-
+/// Encodes a list to the MessagePack format. This function is helper for the [MsgPackCodable] macro.
 void encodeList(Serializer serializer, List list, void Function(Serializer, dynamic) itemEncoder) {
   serializer.encode(list.length);
   for (final item in list) {
@@ -26,6 +12,7 @@ void encodeList(Serializer serializer, List list, void Function(Serializer, dyna
   }
 }
 
+/// Decodes a list from the MessagePack format. This function is helper for the [MsgPackCodable] macro.
 List<T> decodeList<T>(Deserializer deserializer, T Function(Deserializer) itemDecoder) {
   final result = <T>[];
   final length = deserializer.decode() as int;
@@ -35,6 +22,7 @@ List<T> decodeList<T>(Deserializer deserializer, T Function(Deserializer) itemDe
   return result;
 }
 
+/// Encodes a map to the MessagePack format. This function is helper for the [MsgPackCodable] macro.
 void encodeMap(Serializer serializer, Map map, void Function(Serializer, dynamic) keyEncoder, void Function(Serializer, dynamic) valueEncoder) {
   serializer.encode(map.length);
   for (final entry in map.entries) {
@@ -43,6 +31,7 @@ void encodeMap(Serializer serializer, Map map, void Function(Serializer, dynamic
   }
 }
 
+/// Decodes a map from the MessagePack format. This function is helper for the [MsgPackCodable] macro.
 Map<K, V> decodeMap<K, V>(Deserializer deserializer, K Function(Deserializer) keyDecoder, V Function(Deserializer) valueDecoder) {
   final result = <K, V>{};
   final length = deserializer.decode() as int;
@@ -54,12 +43,24 @@ Map<K, V> decodeMap<K, V>(Deserializer deserializer, K Function(Deserializer) ke
   return result;
 }
 
-
+/// A macro which adds a `fromMsgPack(Deserializer)` MessagePack decoding constructor, and a `void toMsgPack(Serializer)`
+/// MessagePack encoding method to a class.
+/// 
+/// To use this macro, annotate your class with `@MsgPackCodable()` and enable the macros experiment (see [Dart Macros](https://dart.dev/language/macros) for full 
+/// instructions). `@MsgPackCodable()` is based on the package [msgpack_dart](https://pub.dev/packages/msgpack_dart) and
+/// is intended to be used in conjunction with it.
+/// 
+/// The implementations are derived from the fields defined directly on the annotated class. Annotated classes are not
+/// allowed to have a manually defined toMsgPack method or fromMsgPack constructor.
 macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMacro {
   const MsgPackCodable();
 
   @override
   FutureOr<void> buildDeclarationsForClass(ClassDeclaration clazz, MemberDeclarationBuilder builder) async {
+    if(clazz.typeParameters.isNotEmpty) {
+      builder.report(Diagnostic(DiagnosticMessage('Generic classes are not supported by @MsgPackCodable().', target: clazz.asDiagnosticTarget), Severity.error));
+      return;
+    }
     final deserializerType = await builder.resolveIdentifier(_msgpackDartPackage, 'Deserializer');
     final serializerType = await builder.resolveIdentifier(_msgpackDartPackage, 'Serializer');
     builder.declareInType(DeclarationCode.fromParts(['  external ${clazz.identifier.name}.fromMsgPack(', deserializerType, ' deserializer);']));
@@ -68,6 +69,10 @@ macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMac
   
   @override
   FutureOr<void> buildDefinitionForClass(ClassDeclaration clazz, TypeDefinitionBuilder builder) async {
+    if(clazz.typeParameters.isNotEmpty) {
+      return;
+    }
+
     final generator = _Generator();
 
     await [
@@ -224,7 +229,7 @@ class _ListTypeCodeGenerator implements _CodeGenerator {
       if (typeKind == _TypeKind.base) {
         return RawCode.fromParts(['(deserializer.decode() as ', listType, ').cast<', typeArg.code, '>()']);  
       } else if (typeKind == _TypeKind.unsupported) {
-        return RawCode.fromString('/* Type argument ${typeArg.identifier.name} is not supported by @MsgPackCodable(). */');
+        return RawCode.fromString('[]');
       } else {
         return RawCode.fromParts([decodeListFunction, '(deserializer, (d) => ', await generator.generateDecode(introspector, typeArg), ')']);  
       }
@@ -232,6 +237,21 @@ class _ListTypeCodeGenerator implements _CodeGenerator {
       return RawCode.fromString('/* List without type argument is not supported by @MsgPackCodable(). */');
     }
   }
+}
+
+final _corePackage = Uri.parse('dart:core');
+final _typedDataPackage = Uri.parse('dart:typed_data');
+final _msgpackCodablePackage = Uri.parse('package:msgpack_codable/msgpack_codable.dart');
+final _msgpackDartPackage = Uri.parse('package:msgpack_dart/msgpack_dart.dart');
+
+typedef _Reporter = void Function(String message);
+
+enum _TypeKind {
+  base,
+  complex,
+  array,
+  map,
+  unsupported,
 }
 
 class _MapTypeCodeGenerator implements _CodeGenerator {
@@ -284,7 +304,7 @@ class _MapTypeCodeGenerator implements _CodeGenerator {
       if (typeKindKey == _TypeKind.base && typeKindValue == _TypeKind.base) {
         return RawCode.fromParts(['(deserializer.decode() as ', mapType, ').cast<', typeArgKey.code, ', ', typeArgValue.code, '>()']);
       } else if (typeKindKey == _TypeKind.unsupported || typeKindValue == _TypeKind.unsupported) {
-        return RawCode.fromString('/* Type argument ${typeArgKey.identifier.name} or ${typeArgValue.identifier.name} is not supported by @MsgPackCodable(). */');
+        return RawCode.fromString('{}');
       } else {
         return RawCode.fromParts([decodeMapFunction, '(deserializer, (deserializer) => ', await generator.generateDecode(introspector, typeArgKey), ', (deserializer) => ', await generator.generateDecode(introspector, typeArgValue), ')']);  
       }
