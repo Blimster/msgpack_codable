@@ -1,38 +1,52 @@
+import 'dart:typed_data';
+
 import 'package:msgpack_codable/msgpack_codable.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
-@MsgpackCodable()
+@MsgPackCodable()
 class Id {
-  final String id;
+  final int id;
 
   Id(this.id);
 
   String toString() => 'Id($id)';
 }
 
-@MsgpackCodable()
-class User {
-  final Id id;
+@MsgPackCodable()
+class Role {
   final String name;
-  final List<String> roles;
 
-  User(this.id, this.name, this.roles);
+  Role(this.name);
 
-  String toString() => 'User(id: $id, name: $name, roles: $roles)';
+  String toString() => 'Role($name)';
 }
 
-List<String> foo() => ['a', 'b', 'c'];
+@MsgPackCodable()
+class User {
+  final Id id;
+  final bool active;
+  final String name;
+  final double score;
+  final Uint8List data;
+  final List<Role> roles;
+  final Map<String, Id> map;
+  final List<List<Id>> nestedList;
 
-class Test {
-  final List<String> list;
+  User(this.id, this.active, this.name, this.score, this.data, this.roles, this.map, this.nestedList);
 
-  Test() : list = foo();
+  String toString() => 'User($id, $active, $name, $score, $data, $roles, $map, $nestedList)';
 }
 
 void main() {
   final serializer = Serializer();
 
-  final user = User(Id('1910'), 'fcstp', ['admin', 'user']);
+  final user = User(Id(1910), true, 'fcstp', 3.14, Uint8List.fromList([1, 2, 3]), [
+    Role('user'),
+    Role('admin')
+  ], {'a': Id(1), 'b': Id(2)}, [
+    [Id(1), Id(2)],
+    [Id(3), Id(4)]
+  ]);
   user.toMsgPack(serializer);
 
   final serialized = serializer.takeBytes();
