@@ -122,6 +122,21 @@ macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMac
   }
 }
 
+final _corePackage = Uri.parse('dart:core');
+final _typedDataPackage = Uri.parse('dart:typed_data');
+final _msgpackCodablePackage = Uri.parse('package:msgpack_codable/msgpack_codable.dart');
+final _msgpackDartPackage = Uri.parse('package:msgpack_dart/msgpack_dart.dart');
+
+typedef _Reporter = void Function(String message);
+
+enum _TypeKind {
+  base,
+  complex,
+  array,
+  map,
+  unsupported,
+}
+
 abstract interface class _CodeGenerator {
   _TypeKind get kind;
   Future<bool> supportsType(DefinitionPhaseIntrospector introspector, NamedTypeAnnotation type);
@@ -143,7 +158,10 @@ class _BaseTypeCodeGenerator implements _CodeGenerator {
       introspector.resolveIdentifier(_corePackage, 'String'),
       introspector.resolveIdentifier(_typedDataPackage, 'Uint8List'),
     ].wait;
-    return supportedTypes.map((e) => e.name).contains(type.identifier.name);
+    if(supportedTypes.map((e) => e.name).contains(type.identifier.name)) {
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -239,21 +257,6 @@ class _ListTypeCodeGenerator implements _CodeGenerator {
   }
 }
 
-final _corePackage = Uri.parse('dart:core');
-final _typedDataPackage = Uri.parse('dart:typed_data');
-final _msgpackCodablePackage = Uri.parse('package:msgpack_codable/msgpack_codable.dart');
-final _msgpackDartPackage = Uri.parse('package:msgpack_dart/msgpack_dart.dart');
-
-typedef _Reporter = void Function(String message);
-
-enum _TypeKind {
-  base,
-  complex,
-  array,
-  map,
-  unsupported,
-}
-
 class _MapTypeCodeGenerator implements _CodeGenerator {
   @override
   _TypeKind get kind => _TypeKind.map;
@@ -331,15 +334,6 @@ class _Generator {
       }
     }
     return _TypeKind.unsupported;
-  }
-
-  Future<bool> supportsField(DefinitionPhaseIntrospector introspector, FieldDeclaration field) async {
-    for(final generator in generators) {
-      if(await generator.supportsType(introspector, field.type as NamedTypeAnnotation)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   Future<Code> generateEncode(DefinitionPhaseIntrospector introspector, String identifier, NamedTypeAnnotation type, DiagnosticTarget diagnosticTarget) async {

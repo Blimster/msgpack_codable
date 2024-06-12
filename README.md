@@ -1,4 +1,4 @@
-This package supports easy encoding and decoding of the MessagePack format. It relies on a macro, that when applied to a user-defined Dart class, auto-generates a `fromMsgPack` decoding constructor and a `toMsgPack` encoding method.
+This package supports easy encoding and decoding of the [MessagePack](https://msgpack.org/) format. It relies on a macro, that when applied to a user-defined Dart class, auto-generates a `fromMsgPack` decoding constructor and a `toMsgPack` encoding method.
 
 Both the package itself, and the underlying macros language feature, are considered experimental. Thus they have incomplete functionality, may be unstable, have breaking changes as the feature evolves, and are not suitable for production code.
 

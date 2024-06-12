@@ -43,7 +43,10 @@ void main() {
   final user = User(Id(1910), true, 'fcstp', 3.14, Uint8List.fromList([1, 2, 3]), [
     Role('user'),
     Role('admin')
-  ], {'a': Id(1), 'b': Id(2)}, [
+  ], {
+    'a': Id(1),
+    'b': Id(2)
+  }, [
     [Id(1), Id(2)],
     [Id(3), Id(4)]
   ]);
