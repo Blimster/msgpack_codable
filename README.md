@@ -95,9 +95,9 @@ class Location {
 }
 ```
 
-The `@MsgPack()` macro accepts the extension type because it has a `fromMsgPack` constructor and a `toMsgPack` method. You have to implement by hand what the macro normally generates for you.
+The `@MsgPack()` macro accepts the extension type because it has a `fromMsgPack` constructor and a `toMsgPack` method.
 
-> It is planned to support the application of the `@MsgPack()` macro on Dart extension types.
+> You have to implement by hand what the macro normally generates for you. It is planned to support the application of the `@MsgPack()` macro on Dart extension types.
 
 ### Using MessagePack format extension types
 
