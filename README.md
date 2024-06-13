@@ -52,3 +52,5 @@ analyzer:
 ```
 
 Note that `dart run` is a little bit special, in that the option must come _immediately_ following `dart` and before `run` - this is because it is an option to the Dart VM, and not the Dart script itself. For example, `dart --enable-experiment=macros run bin/my_script.dart`. This is also how the `test` package expects to be invoked, so `dart --enable-experiment=macros test`.
+
+See also [Dart Macros](https://dart.dev/language/macros) for more details.
