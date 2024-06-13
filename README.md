@@ -36,7 +36,11 @@ The core collection types `List` and `Map` are also supported, if their elements
 
 ## Generics
 
-Classes with generic type parameters are not supported.
+Classes with generic type parameters are currently not supported.
+
+## Inheritance
+
+Inheritance is currently not supported.
 
 ## Enabling the macros experiment
 
