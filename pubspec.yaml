@@ -1,6 +1,12 @@
 name: msgpack_codable
+description: A library for encoding and decoding of the MessagePack format using the Dart macro feature. 
 version: 0.1.0
 repository: https://github.com/blimster/msgpack_codable
+topics:
+  - MessagePack
+  - msgpack_dart
+  - message serialization
+  - macros
 
 environment:
   sdk: ^3.5.0-243.0.dev
