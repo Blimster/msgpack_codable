@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:msgpack_codable/msgpack_codable.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
@@ -26,35 +24,28 @@ class User {
   final Id id;
   final bool active;
   final String name;
-  final double score;
-  final Uint8List data;
   final List<Role> roles;
-  final Map<String, Id> map;
-  final List<List<Id>> nestedList;
 
-  User(this.id, this.active, this.name, this.score, this.data, this.roles, this.map, this.nestedList);
+  User(this.id, this.active, this.name, this.roles);
 
-  String toString() => 'User($id, $active, $name, $score, $data, $roles, $map, $nestedList)';
+  String toString() => 'User($id, $active, $name, $roles)';
 }
 
 void main() {
+  // create an instance of the serializer
   final serializer = Serializer();
 
-  final user = User(Id(1910), true, 'fcstp', 3.14, Uint8List.fromList([1, 2, 3]), [
-    Role('user'),
-    Role('admin')
-  ], {
-    'a': Id(1),
-    'b': Id(2)
-  }, [
-    [Id(1), Id(2)],
-    [Id(3), Id(4)]
-  ]);
+  // create an user instaqnce and serilize it to msgpack
+  final user = User(Id(101), true, 'user101', [Role('user'), Role('admin')]);
   user.toMsgPack(serializer);
 
+  // get the serialized bytes
   final serialized = serializer.takeBytes();
 
+  // create an instance of the deserializer
   final deserializer = Deserializer(serialized);
+
+  // decode the msgpack bytes to a new user instance
   final decodedUser = User.fromMsgPack(deserializer);
 
   print(decodedUser);
