@@ -1,7 +1,7 @@
 import 'package:msgpack_codable/msgpack_codable.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
-@MsgPackCodable()
+@MsgPack()
 class Id {
   final int id;
 
@@ -10,7 +10,7 @@ class Id {
   String toString() => 'Id($id)';
 }
 
-@MsgPackCodable()
+@MsgPack()
 class Role {
   final String name;
 
@@ -19,7 +19,7 @@ class Role {
   String toString() => 'Role($name)';
 }
 
-@MsgPackCodable()
+@MsgPack()
 class User {
   final Id id;
   final bool active;

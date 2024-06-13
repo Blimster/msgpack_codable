@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:macros/macros.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
-/// Encodes a list to the MessagePack format. This function is helper for the [MsgPackCodable] macro.
+/// Encodes a list to the MessagePack format. This function is helper for the [MsgPack] macro.
 void encodeList(Serializer serializer, List list, void Function(Serializer, dynamic) itemEncoder) {
   serializer.encode(list.length);
   for (final item in list) {
@@ -12,7 +12,7 @@ void encodeList(Serializer serializer, List list, void Function(Serializer, dyna
   }
 }
 
-/// Decodes a list from the MessagePack format. This function is helper for the [MsgPackCodable] macro.
+/// Decodes a list from the MessagePack format. This function is helper for the [MsgPack] macro.
 List<T> decodeList<T>(Deserializer deserializer, T Function(Deserializer) itemDecoder) {
   final result = <T>[];
   final length = deserializer.decode() as int;
@@ -22,7 +22,7 @@ List<T> decodeList<T>(Deserializer deserializer, T Function(Deserializer) itemDe
   return result;
 }
 
-/// Encodes a map to the MessagePack format. This function is helper for the [MsgPackCodable] macro.
+/// Encodes a map to the MessagePack format. This function is helper for the [MsgPack] macro.
 void encodeMap(Serializer serializer, Map map, void Function(Serializer, dynamic) keyEncoder, void Function(Serializer, dynamic) valueEncoder) {
   serializer.encode(map.length);
   for (final entry in map.entries) {
@@ -31,7 +31,7 @@ void encodeMap(Serializer serializer, Map map, void Function(Serializer, dynamic
   }
 }
 
-/// Decodes a map from the MessagePack format. This function is helper for the [MsgPackCodable] macro.
+/// Decodes a map from the MessagePack format. This function is helper for the [MsgPack] macro.
 Map<K, V> decodeMap<K, V>(Deserializer deserializer, K Function(Deserializer) keyDecoder, V Function(Deserializer) valueDecoder) {
   final result = <K, V>{};
   final length = deserializer.decode() as int;
@@ -52,8 +52,10 @@ Map<K, V> decodeMap<K, V>(Deserializer deserializer, K Function(Deserializer) ke
 /// 
 /// The implementations are derived from the fields defined directly on the annotated class. Annotated classes are not
 /// allowed to have a manually defined toMsgPack method or fromMsgPack constructor.
-macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMacro {
-  const MsgPackCodable();
+macro class MsgPack implements ClassDeclarationsMacro, ClassDefinitionMacro {
+  final List _extTypes;
+  
+  const MsgPack({List extTypes = const []}) : _extTypes = extTypes;
 
   @override
   FutureOr<void> buildDeclarationsForClass(ClassDeclaration clazz, MemberDeclarationBuilder builder) async {
@@ -73,7 +75,7 @@ macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMac
       return;
     }
 
-    final generator = _Generator();
+    final generator = _Generator(_extTypes.map((e) => e.toString()).toList());
 
     await [
       _defineToMsgPack(generator, clazz, builder),
@@ -120,6 +122,7 @@ macro class MsgPackCodable implements ClassDeclarationsMacro, ClassDefinitionMac
     final builder = await typeBuilder.buildConstructor(fromMsgPack.identifier);
     builder.augment(initializers: initializers);
   }
+    
 }
 
 final _corePackage = Uri.parse('dart:core');
@@ -145,6 +148,10 @@ abstract interface class _CodeGenerator {
 }
 
 class _BaseTypeCodeGenerator implements _CodeGenerator {
+  final List<String> extTypes;
+
+  _BaseTypeCodeGenerator(this.extTypes);
+  
   @override
   _TypeKind get kind => _TypeKind.base;
 
@@ -159,6 +166,9 @@ class _BaseTypeCodeGenerator implements _CodeGenerator {
       introspector.resolveIdentifier(_typedDataPackage, 'Uint8List'),
     ].wait;
     if(supportedTypes.map((e) => e.name).contains(type.identifier.name)) {
+      return true;
+    }
+    if(extTypes.contains(type.identifier.name)) {
       return true;
     }
     return false;
@@ -318,14 +328,14 @@ class _MapTypeCodeGenerator implements _CodeGenerator {
 }
 
 class _Generator {
-  final List<_CodeGenerator> generators = [
-      _BaseTypeCodeGenerator(),
+  final List<_CodeGenerator> generators;
+
+  _Generator(List<String> extTypes) : generators = [
+      _BaseTypeCodeGenerator(extTypes),
       _ComplexTypeCodeGenerator(),
       _ListTypeCodeGenerator(),
       _MapTypeCodeGenerator(),
     ];
-
-  _Generator();
 
   Future<_TypeKind> kindOf(DefinitionPhaseIntrospector introspector, NamedTypeAnnotation type) async {
     for(final generator in generators) {
