@@ -101,7 +101,7 @@ The `@MsgPack()` macro accepts the extension type because it has a `fromMsgPack`
 
 ### Using MessagePack format extension types
 
-Another option is to tell the `@MsgPack()` macro that the `Vector3` class is an MessagePack extension type. You do that by providing the `extTypes` argument.
+Another option is to tell the `@MsgPack()` macro that the `Vector3` class is a MessagePack extension type. You do that by providing the `extTypes` argument.
 
 ```dart
 @MsgPack(extTypes: ['Vector3'])
