@@ -74,7 +74,7 @@ class Location {
 
 ### Using Dart extension types
 
-The first option is to create an Dart extension type for `Vector3` and use it instead of the original type in your class.
+The first option is to create a Dart extension type for `Vector3` and use it instead of the original type in your class.
 
 ```dart
 /// class in a library not under your control
