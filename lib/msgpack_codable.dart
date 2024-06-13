@@ -135,6 +135,7 @@ typedef _Reporter = void Function(String message);
 enum _TypeKind {
   base,
   complex,
+  enumeration,
   array,
   map,
   unsupported,
@@ -212,9 +213,36 @@ class _ComplexTypeCodeGenerator implements _CodeGenerator {
 
   @override
   Future<Code> generateDecode(_Generator generator, TypePhaseIntrospector introspector, NamedTypeAnnotation type) async {
-    return RawCode.fromString('${type.identifier.name}.fromMsgPack(deserializer)');  
+    return RawCode.fromParts([type.identifier, '.fromMsgPack(deserializer)']);
   }
   }
+
+class _EnumTypeCodeGenerator implements _CodeGenerator {
+  @override
+  _TypeKind get kind => _TypeKind.enumeration;
+  
+  @override
+  Future<bool> supportsType(DefinitionPhaseIntrospector introspector, NamedTypeAnnotation type) async {    
+    final declaration = await introspector.declarationOf(type.identifier);
+    if(declaration is EnumDeclaration) { 
+      return true;
+    }
+    if(declaration is ClassDeclaration) {
+      return declaration.superclass?.identifier.name == '_Enum';
+    }
+    return false;
+  }
+
+  @override
+  Future<Code> generateEncode(_Generator generator, _Reporter reporter, DefinitionPhaseIntrospector introspector, String identifier, NamedTypeAnnotation type) async {
+    return RawCode.fromParts(['serializer.encode(', identifier, '.index)']);
+  }
+  
+  @override
+  Future<Code> generateDecode(_Generator generator, DefinitionPhaseIntrospector introspector, NamedTypeAnnotation type) async {
+    return RawCode.fromParts([type.identifier, '.values[deserializer.decode()]']);
+  }
+}
 
 class _ListTypeCodeGenerator implements _CodeGenerator {
   @override
@@ -333,6 +361,7 @@ class _Generator {
   _Generator(List<String> extTypes) : generators = [
       _BaseTypeCodeGenerator(extTypes),
       _ComplexTypeCodeGenerator(),
+      _EnumTypeCodeGenerator(),
       _ListTypeCodeGenerator(),
       _MapTypeCodeGenerator(),
     ];

@@ -13,6 +13,7 @@ import 'package:msgpack_codable/msgpack_codable.dart';
 class User {
   final String name;
   final int? age;
+  User(this.name, this.age);
 }
 ```
 
@@ -26,22 +27,37 @@ class User {
 }
 ```
 
+You serialize and deserialize the `User` class like this:
+
+```dart
+void main() {
+  final user = User('name', 18);
+  final serializer = Serializer();
+  user.toMsgPack(serializer);
+
+  final bytes = serializer.takeBytes();
+
+  final deserializer = Deserializer(bytes);
+  final deserializedUser = User.fromMsgPack(deserializer);
+}
+```
+
 ## Supported field types
 
-The Dart types `num`, `int`, `double`, `bool`, `String` and `Uint8List` (from `dart:typed_data`) are supported.
+The Dart types `num`, `int`, `double`, `bool`, `String` and `Uint8List` are supported. Enums are supported by serializing the index of the enum value.
 
 In addtition, all types annotated with `@MsgPack()` are supported.
 
-The core collection types `List` and `Map` are also supported, if their elements are supported types and have generic type arguments.
+The core collection types `List` and `Map` are also supported, if their elements are supported types and have type arguments.
 
 ## Extension types
 
-Additional types are supported by using extension types. Extension types are a feature of the Dart language and the MessagePack format. Both are supported.
+Both, the Dart language and the MessagePack format have a feature called extension types. Both can be used to support additional types.
 
-A common case to use extension types is encoding and decoding of types not in your control. Assume you use a class `Vector3` in the class `Location` of your data model and want to encode/decode it. Because `Vector3` is defined in another library, you can't annotate it with `@MsgPack()`.
+A common case to use extension types is encoding and decoding of types that are not under your control. Assume you want to use a class `Vector3` from a third-party library in a class `Location` of your data model. Because `Vector3` is defined in the third-party library, you can't annotate it with `@MsgPack()`.
 
 ```dart
-/// class in a library not in your control
+/// class in a library not under your control
 class Vector3 {
   final double x;
   final double y;
@@ -56,19 +72,19 @@ class Location {
 }
 ```
 
-### Dart extension types
+### Using Dart extension types
 
-The first option is to create an Dart extension type for `Vector3` and use it instead the original type in your class.
+The first option is to create an Dart extension type for `Vector3` and use it instead of the original type in your class.
 
 ```dart
-/// class in a library not in your control
+/// class in a library not under your control
 extension type Vector3MsgPack(Vector3 value) implements Vector3 {
   factory Vector3MsgPack.fromMsgPack(Deserializer deserializer) {
-    // implement custom deserializion here
+    // implement deserializion here
   }
 
   void toMsgPack(Serializer serializer) {
-    // implement custom serialization here
+    // implement serialization here
   }
 }
 
@@ -79,13 +95,13 @@ class Location {
 }
 ```
 
-The `@MsgPack()` macro accepts the extension type because it has a `fromMsgPack` constructor and a `toMsgPack` method. You have to implement by hand what the macros normally generates for you.
+The `@MsgPack()` macro accepts the extension type because it has a `fromMsgPack` constructor and a `toMsgPack` method. You have to implement by hand what the macro normally generates for you.
 
-It is planned to support the application of the `@MsgPack()` macro on Dart extension types.
+> It is planned to support the application of the `@MsgPack()` macro on Dart extension types.
 
-### MessagePack format extension types
+### Using MessagePack format extension types
 
-Another option is to tell the `@MsgPack()` macro that the `Vector3` class is an MessagePack extension type. You do that by providing the `extType` parameter.
+Another option is to tell the `@MsgPack()` macro that the `Vector3` class is an MessagePack extension type. You do that by providing the `extTypes` argument.
 
 ```dart
 @MsgPack(extTypes: ['Vector3'])
