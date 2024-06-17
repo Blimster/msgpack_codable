@@ -13,7 +13,7 @@ environment:
 
 dependencies:
   msgpack_dart: ^1.0.1
-  macros: ^0.1.0-main.7
+  macros: ^0.1.2-main.3
 
 dev_dependencies:
   lints: ^4.0.0
